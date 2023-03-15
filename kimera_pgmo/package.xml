@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>kimera_pgmo</name>
+  <version>0.0.1</version>
+  <description>Kimera PGMO</description>
+
+  <maintainer email="yunchang@mit.edu">Yun Chang</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>gtsam</depend>
+  <depend>Eigen</depend>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>rosbag</depend>
+  <depend>tf</depend>
+  <depend>mesh_msgs</depend>
+  <depend>rviz_mesh_plugin</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>voxblox_msgs</depend>
+  <depend>voxblox</depend>
+  <depend>pose_graph_tools</depend>
+  <depend>kimera_rpgo</depend>
+  <depend>tf2_ros</depend>
+
+  <depend>pcl_conversions</depend>
+  <depend>pcl_msgs</depend>
+
+  <depend>rosunit</depend>
+  <depend>rostest</depend>
+</package>
