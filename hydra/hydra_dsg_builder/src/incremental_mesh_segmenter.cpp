@@ -41,6 +41,9 @@
 #include <pcl_ros/point_cloud.h>
 
 #include <glog/logging.h>
+#include <kimera_pgmo/MeshFrontend.h>
+#include "hydra_dsg_builder/incremental_dsg_frontend.h"
+
 
 namespace hydra {
 namespace incremental {
@@ -148,6 +151,8 @@ MeshSegmenter::MeshSegmenter(const ros::NodeHandle& nh,
     segmented_mesh_vertices_pub_.reset(
         new ObjectCloudPublishers("object_mesh_vertices", nh_));
   }
+
+  obj_pub_ = nh_.advertise<std_msgs::String>("obj",20);
 }
 
 MeshSegmenter::~MeshSegmenter() {
@@ -361,7 +366,7 @@ void MeshSegmenter::updateGraph(DynamicSceneGraph& graph,
 
       const auto& node =
           graph.getNode(node_id).value().get().attributes<SemanticNodeAttributes>();
-
+      // ROS_WARN_STREAM("[Color!]"<<unsigned(node.color(0))<<unsigned(node.color(1))<<unsigned(node.color(2))<<node.position<<node.last_update_time_ns<<node.semantic_label);
       for (const auto& other_id : to_check) {
         if (node_id == other_id) {
           continue;
@@ -435,6 +440,28 @@ void MeshSegmenter::addObjectToGraph(DynamicSceneGraph& graph,
   pcl::PointXYZ centroid;
   cluster.centroid.get(centroid);
   attrs->position << centroid.x, centroid.y, centroid.z;
+
+  //   // auto lipu = graph.getNode(graph.getNode(next_node_id_)
+  // //                                     .value()
+  // //                                     .get().getParent().value()).value().get()
+  // //                                     .attributes<SemanticNodeAttributes>()
+  // //                                     .color; 
+  // // ROS_WARN_STREAM("lipu"<<lipu(0));
+  // std::string s = "[BEGIN]";
+  // // ROS_WARN_STREAM("Enter obj1");
+  // // ROS_WARN_STREAM("Enter obj2"<<label);
+  // // ROS_WARN_STREAM("Enter obj3"<<NodeSymbol(next_node_id_).getLabel());
+  // // ROS_WARN_STREAM("Enter obj"<<attrs->name);
+  // std_msgs::String msg;
+  // std::stringstream ss;
+  
+  // ss<<s<<",slabel,"<<unsigned(label)<<",time,"<<unsigned(timestamp) <<",label,"
+  // <<attrs->name<<",position,"
+  // <<attrs->position.transpose()<<",color,"<<unsigned(attrs->color(0))
+  // <<" "<<unsigned(point.g)<<" "<< unsigned(point.b)<<",id,"<<unsigned(next_node_id_)<<",[END]";
+  // msg.data = ss.str();
+  // ROS_WARN("%s", msg.data.c_str());
+  // obj_pub_.publish(msg);
 
   graph.emplaceNode(DsgLayers::OBJECTS, next_node_id_, std::move(attrs));
 

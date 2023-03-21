@@ -129,7 +129,21 @@ bool MeshFrontend::createPublishers(const ros::NodeHandle& n) {
       "deformation_graph_mesh", 10, false);
   mesh_graph_pub_ = nl.advertise<pose_graph_tools::PoseGraph>(
       "mesh_graph_incremental", 100, true);
+  object_info_pub_ = nl.advertise<std_msgs::String>(
+      "object_info",10);
   return true;
+}
+
+void MeshFrontend::publistObjInfo(const std::string& s){
+  std_msgs::String msg;
+  // std::stringstream ss;
+  // ss  << s;
+  // msg.data = ss.str();
+  msg.data = s;
+
+  ROS_INFO_STREAM(s);
+
+  object_info_pub_.publish(msg);
 }
 
 bool MeshFrontend::registerCallbacks(const ros::NodeHandle& n) {

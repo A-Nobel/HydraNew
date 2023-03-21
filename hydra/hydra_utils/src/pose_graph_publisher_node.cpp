@@ -135,7 +135,7 @@ struct PoseGraphPublisherNode {
     curr_pose.orientation = transform.transform.rotation;
 
     if (num_poses > 0) {
-      ROS_INFO_STREAM(" Publishing edge " << num_poses - 1 << " -> " << num_poses);
+      // ROS_INFO_STREAM(" Publishing edge " << num_poses - 1 << " -> " << num_poses);
       pose_graph_tools::PoseGraph pose_graph;
       pose_graph.header.stamp = time_to_use;
       pose_graph.header.frame_id = world_frame;

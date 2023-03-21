@@ -128,6 +128,7 @@ class MeshSegmenter {
   BoundingBox::Type bounding_box_type_;
 
   ros::Publisher active_mesh_vertex_pub_;
+  ros::Publisher obj_pub_;
   std::unique_ptr<ObjectCloudPublishers> segmented_mesh_vertices_pub_;
 
   // TODO(nathan) think about replacing this

@@ -143,7 +143,7 @@ namespace rviz_mesh_plugin
   void TexturedMeshVisual::reset()
   {
 
-    ROS_INFO("Resetting TexturedMeshVisual %lu_TexturedMesh_%lu_%lu",m_prefix, m_postfix, m_random);
+    // ROS_INFO("Resetting TexturedMeshVisual %lu_TexturedMesh_%lu_%lu",m_prefix, m_postfix, m_random);
 
 
     std::stringstream sstm;
@@ -896,7 +896,7 @@ bool TexturedMeshVisual::setGeometry(const mesh_msgs::MeshGeometryStamped::Const
   // check if there are vertex normals for each vertex
   if (mesh.vertex_normals.size() == mesh.vertices.size())
   {
-    ROS_INFO("Received %lu vertex normals.", mesh.vertex_normals.size());
+    // ROS_INFO("Received %lu vertex normals.", mesh.vertex_normals.size());
     m_vertex_normals_enabled = true;
   }
   else if (mesh.vertex_normals.size() > 0)
@@ -944,7 +944,7 @@ bool TexturedMeshVisual::setVertexColors(const mesh_msgs::MeshVertexColorsStampe
   // check if there are vertex colors for each vertex
   if (vertexColors.vertex_colors.size() == m_meshMsg.vertices.size())
   {
-    ROS_INFO("Received %lu vertex colors.", vertexColors.vertex_colors.size());
+    // ROS_INFO("Received %lu vertex colors.", vertexColors.vertex_colors.size());
     m_vertex_colors_enabled = true;
   }
   else
@@ -977,7 +977,7 @@ bool TexturedMeshVisual::setVertexCosts(
   // check if there are vertex costs for each vertex
   if (vertexCosts.costs.size() == m_meshMsg.vertices.size())
   {
-    ROS_INFO("Received %lu vertex costs.", vertexCosts.costs.size());
+    // ROS_INFO("Received %lu vertex costs.", vertexCosts.costs.size());
     m_vertex_costs_enabled = true;
   }
   else

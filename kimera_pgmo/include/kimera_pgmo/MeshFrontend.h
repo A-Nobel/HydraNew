@@ -9,6 +9,7 @@
 #include <deque>
 #include <thread>
 #include <unordered_map>
+#include "std_msgs/String.h"
 
 #include <mesh_msgs/TriangleMeshStamped.h>
 #include <pcl/PolygonMesh.h>
@@ -47,6 +48,9 @@ class MeshFrontend {
   inline pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getFullMeshVertices() const {
     return vertices_;
   }
+  /*! /give objinfo and publish
+  */
+  void publistObjInfo(const std::string& s);
 
   inline const std::vector<pcl::Vertices>& getFullMeshFaces() const {
     return *triangles_;
@@ -211,6 +215,7 @@ class MeshFrontend {
   ros::Subscriber voxblox_sub_;
   ros::Publisher full_mesh_pub_;
   ros::Publisher simplified_mesh_pub_;
+  ros::Publisher object_info_pub_;
   ros::Publisher mesh_graph_pub_;  // publish the factors corresponding to the
                                    // edges of the simplified mesh
 

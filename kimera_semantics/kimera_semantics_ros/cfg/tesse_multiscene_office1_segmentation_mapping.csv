@@ -25,9 +25,9 @@ Cell_Complete,2,103,71,255,19
 Cell_Shelf,154,229,206,255,9
 Cell_Sink,32,32,32,255,0
 Cell_Toilet,32,32,32,255,0
-Chair_LeatherOffice,102,255,0,255,5
+Chair_Office_Leather,102,255,0,255,5
 Chair_Spinning,102,255,0,255,5
-Chair_Wood,102,255,0,255,5
+Chair_Wooden,102,255,0,255,5
 Closet_Door_L,154,229,206,255,9
 Closet_Door_R,154,229,206,255,9
 Closet_Metal,32,32,32,255,0
@@ -203,3 +203,4 @@ WindowBlinds_B,32,32,32,255,0
 WindowBlinds_Closed,32,32,32,255,0
 WindowBlinds_D,32,32,32,255,0
 BadLabel,125,218,3,255,0
+Storage_cardboard_box_A,111,22,11,255,5

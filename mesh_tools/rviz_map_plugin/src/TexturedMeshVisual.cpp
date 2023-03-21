@@ -817,7 +817,7 @@ bool TexturedMeshVisual::setNormals(const vector<Normal>& normals)
     // check if there are vertex normals for each vertex
     if (normals.size() == m_geometry.vertices.size())
     {
-        ROS_INFO("Received %lu vertex normals.", normals.size());
+        // ROS_INFO("Received %lu vertex normals.", normals.size());
         m_vertex_normals_enabled = true;
     }
     else if (normals.size() > 0)
@@ -844,7 +844,7 @@ bool TexturedMeshVisual::setVertexColors(const vector<Color>& vertexColors)
     // check if there are vertex colors for each vertex
     if (vertexColors.size() == m_geometry.vertices.size())
     {
-        ROS_INFO("Received %lu vertex colors.", vertexColors.size());
+        // ROS_INFO("Received %lu vertex colors.", vertexColors.size());
         m_vertex_colors_enabled = true;
     }
     else
@@ -885,7 +885,7 @@ bool TexturedMeshVisual::setMaterials(
     // check if there is a material index for each cluster
     if (materials.size() >= 0)
     {
-        ROS_INFO("Received %lu materials.", materials.size());
+        // ROS_INFO("Received %lu materials.", materials.size());
         m_materials_enabled = true; // enable materials
     }
     else
@@ -898,7 +898,7 @@ bool TexturedMeshVisual::setMaterials(
     // check if there are texture coords for each vertex
     if (texCoords.size() == m_geometry.vertices.size())
     {
-        ROS_INFO("Received %lu texture coords.", texCoords.size());
+        // ROS_INFO("Received %lu texture coords.", texCoords.size());
         m_texture_coords_enabled = true; // enable texture coords
         m_textures_enabled = true; // enable textures
     }

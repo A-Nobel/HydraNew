@@ -72,7 +72,7 @@ namespace rviz_mesh_plugin
   void TriangleMeshVisual::reset()
   {
 
-    ROS_INFO("Resetting TriangleMeshVisual %lu_TriangleMesh_%lu_%lu",m_prefix, m_postfix, m_random);
+    // ROS_INFO("Resetting TriangleMeshVisual %lu_TriangleMesh_%lu_%lu",m_prefix, m_postfix, m_random);
 
 
     std::stringstream sstm;
@@ -532,7 +532,7 @@ void TriangleMeshVisual::setMessage(const mesh_msgs::TriangleMeshStamped::ConstP
   // vertex colors
   // check if there are vertex colors for each vertex
   if(mesh.vertex_colors.size() == mesh.vertices.size()){
-    ROS_INFO("Received %lu vertex colors.", mesh.vertex_colors.size());
+    // ROS_INFO("Received %lu vertex colors.", mesh.vertex_colors.size());
     m_vertex_colors_enabled = true;
   }
   else if(mesh.vertex_colors.size() > 0){
