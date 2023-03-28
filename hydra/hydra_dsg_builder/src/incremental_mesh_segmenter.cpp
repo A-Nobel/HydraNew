@@ -34,16 +34,15 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_dsg_builder/incremental_mesh_segmenter.h"
 
+#include <glog/logging.h>
 #include <hydra_utils/timing_utilities.h>
+#include <kimera_pgmo/MeshFrontend.h>
 #include <kimera_semantics_ros/ros_params.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <glog/logging.h>
-#include <kimera_pgmo/MeshFrontend.h>
 #include "hydra_dsg_builder/incremental_dsg_frontend.h"
-
 
 namespace hydra {
 namespace incremental {
@@ -152,7 +151,7 @@ MeshSegmenter::MeshSegmenter(const ros::NodeHandle& nh,
         new ObjectCloudPublishers("object_mesh_vertices", nh_));
   }
 
-  obj_pub_ = nh_.advertise<std_msgs::String>("obj",20);
+  obj_pub_ = nh_.advertise<std_msgs::String>("obj", 20);
 }
 
 MeshSegmenter::~MeshSegmenter() {
@@ -396,7 +395,38 @@ void MeshSegmenter::updateGraph(DynamicSceneGraph& graph,
       }
     }
   }
+  const auto& objects = graph.getLayer(DsgLayers::OBJECTS);
+  for (const auto& id_node_pair : objects.nodes()) {
+    if (!graph.getNode(id_node_pair.first)) continue;
+    const auto& objNode = graph.getNode(id_node_pair.first)
+                              .value()
+                              .get()
+                              .attributes<SemanticNodeAttributes>();
+    for (const auto& id_node_pair2 : objects.nodes()) {
+      if (!graph.getNode(id_node_pair2.first)) continue;
+      const auto& objNode2 = graph.getNode(id_node_pair2.first)
+                                 .value()
+                                 .get()
+                                 .attributes<SemanticNodeAttributes>();
+      if (id_node_pair.first == id_node_pair2.first) continue;
+      if (objNode.bounding_box.isInside(objNode2.position) ||
+          objNode2.bounding_box.isInside(objNode.position)) {
+        if (objNode.bounding_box.volume() >= objNode2.bounding_box.volume()) {
+          graph.removeNode(id_node_pair2.first);
+          active_objects_[objNode2.semantic_label].erase(id_node_pair2.first);
+          active_object_timestamps_.erase(id_node_pair2.first);
+          objects_to_check_for_places_.erase(id_node_pair2.first);
+        } else {
+          graph.removeNode(id_node_pair.first);
+          active_objects_[objNode.semantic_label].erase(id_node_pair.first);
+          active_object_timestamps_.erase(id_node_pair.first);
+          objects_to_check_for_places_.erase(id_node_pair.first);
+        }
+      }
+    }
+  }
 }
+
 
 void MeshSegmenter::updateObjectInGraph(DynamicSceneGraph& graph,
                                         const Cluster& cluster,
@@ -445,7 +475,7 @@ void MeshSegmenter::addObjectToGraph(DynamicSceneGraph& graph,
   // //                                     .value()
   // //                                     .get().getParent().value()).value().get()
   // //                                     .attributes<SemanticNodeAttributes>()
-  // //                                     .color; 
+  // //                                     .color;
   // // ROS_WARN_STREAM("lipu"<<lipu(0));
   // std::string s = "[BEGIN]";
   // // ROS_WARN_STREAM("Enter obj1");
@@ -454,12 +484,12 @@ void MeshSegmenter::addObjectToGraph(DynamicSceneGraph& graph,
   // // ROS_WARN_STREAM("Enter obj"<<attrs->name);
   // std_msgs::String msg;
   // std::stringstream ss;
-  
+
   // ss<<s<<",slabel,"<<unsigned(label)<<",time,"<<unsigned(timestamp) <<",label,"
   // <<attrs->name<<",position,"
   // <<attrs->position.transpose()<<",color,"<<unsigned(attrs->color(0))
-  // <<" "<<unsigned(point.g)<<" "<< unsigned(point.b)<<",id,"<<unsigned(next_node_id_)<<",[END]";
-  // msg.data = ss.str();
+  // <<" "<<unsigned(point.g)<<" "<<
+  // unsigned(point.b)<<",id,"<<unsigned(next_node_id_)<<",[END]"; msg.data = ss.str();
   // ROS_WARN("%s", msg.data.c_str());
   // obj_pub_.publish(msg);
 

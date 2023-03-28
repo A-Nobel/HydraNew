@@ -270,13 +270,19 @@ void DsgFrontend::runMeshFrontend() {
       object_clusters = segmenter_->detectObjects(
           mesh_frontend_.getActiveFullMeshVertices(), getLatestPose());
     }
+
+    {  // start dsg critical section
+      ScopedTimer timer("frontend/object_graph_update", last_places_timestamp_);
+      std::unique_lock<std::mutex> lock(dsg_->mutex);
+      segmenter_->updateGraph(*dsg_->graph, object_clusters, last_places_timestamp_);
+      addPlaceObjectEdges();
+    }  // end dsg critical section
     {
       // after detect object, we need to send the object info to the agent
       const auto& objects = dsg_->graph->getLayer(DsgLayers::OBJECTS);
       std::string totalInfo = "";
       int countForNode = 0;
       for (const auto& id_node_pair : objects.nodes()) {
-        auto connections = dsg_->graph->getMeshConnectionIndices(id_node_pair.first);
         if (!dsg_->graph->getNode(id_node_pair.first)) continue;
         const auto& objNode = dsg_->graph->getNode(id_node_pair.first)
                                   .value()
@@ -315,14 +321,6 @@ void DsgFrontend::runMeshFrontend() {
       }
       mesh_frontend_.publistObjInfo(totalInfo);
     }
-
-    {  // start dsg critical section
-      ScopedTimer timer("frontend/object_graph_update", last_places_timestamp_);
-      std::unique_lock<std::mutex> lock(dsg_->mutex);
-      segmenter_->updateGraph(*dsg_->graph, object_clusters, last_places_timestamp_);
-      addPlaceObjectEdges();
-    }  // end dsg critical section
-
     if (state.timestamp_ns != last_mesh_timestamp_) {
       dsg_->updated = true;
       continue;  // places dropped a message or is ahead of us, so we don't need
