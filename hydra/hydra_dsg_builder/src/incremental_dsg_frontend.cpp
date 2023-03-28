@@ -34,11 +34,10 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_dsg_builder/incremental_dsg_frontend.h"
 
+#include <glog/logging.h>
 #include <hydra_utils/timing_utilities.h>
 #include <kimera_pgmo/utils/CommonFunctions.h>
 #include <tf2_eigen/tf2_eigen.h>
-
-#include <glog/logging.h>
 
 #include <fstream>
 
@@ -255,76 +254,13 @@ void DsgFrontend::runMeshFrontend() {
 
         std::vector<NodeId> objects_to_delete;
         const auto& objects = dsg_->graph->getLayer(DsgLayers::OBJECTS);
-        // const auto& rooms = dsg_->graph->getLayer(DsgLayers::ROOMS);
-        // const auto& xx = dsg_->graph->getLayer(DsgLayers::AGENTS);
-        // ROS_WARN_STREAM("[DSG Frontend] nodes size "
-        //           << objects.nodes().size() );
-        // ROS_WARN_STREAM("[DSG Frontend] rooms size "
-        //           << rooms.nodes().size() );
-        // ROS_WARN_STREAM("[DSG Frontend] xx size "
-        //           << xx.nodes().size() );
-        std::string totalInfo = "";
-        int countForNode = 0;
         for (const auto& id_node_pair : objects.nodes()) {
           auto connections = dsg_->graph->getMeshConnectionIndices(id_node_pair.first);
           if (connections.size() < config_.min_object_vertices) {
             objects_to_delete.push_back(id_node_pair.first);
           }
-          if(!dsg_->graph->getNode(id_node_pair.first)) continue;
-          const auto& objNode = dsg_->graph->getNode(id_node_pair.first).value().get().attributes<SemanticNodeAttributes>();
-          // add Id
-          totalInfo += "";totalInfo+=std::to_string(countForNode++);totalInfo+=",";
-          
-          // add True ID
-          totalInfo += std::to_string(unsigned(id_node_pair.first));totalInfo +=",";
-
-          // add color
-          totalInfo += std::to_string(unsigned(objNode.color(0)));totalInfo += " ";
-          totalInfo += std::to_string(unsigned(objNode.color(1)));totalInfo +=" ";
-          totalInfo += std::to_string(unsigned(objNode.color(2)));totalInfo +=",";
-
-          // add position
-          totalInfo += std::to_string(objNode.position(0));totalInfo += " ";
-          totalInfo += std::to_string(objNode.position(1));totalInfo += " ";
-          totalInfo += std::to_string(objNode.position(2));totalInfo += ",";
-
-          // add time
-          totalInfo += std::to_string(unsigned(objNode.last_update_time_ns));totalInfo += ",";
-
-          // add slabel
-          totalInfo += std::to_string(unsigned(objNode.semantic_label));totalInfo += ",";
-
-          // // add xsize ysize
-          // totalInfo += std::to_string(unsigned(objNode.bounding_box.));totalInfo += ",";
-
-          // add name
-          totalInfo += objNode.name; totalInfo += ";";
-
-          // ROS_WARN_STREAM("[ob id]"<<id_node_pair.first);
-
-          // if(!objNode.getParent()) continue;
-          // spark_dsg::NodeId placeId = objNode.getParent().value();
-          // if(!dsg_ -> graph ->getNode(placeId)) continue;
-          // const SceneGraphNode& placeNode = dsg_ -> graph ->getNode(placeId).value();
-          // ROS_WARN_STREAM("[p id]"<<placeId);
-          // if(!placeNode.getParent()) continue;
-          // auto roomId = placeNode.getParent().value();
-          
-            // ROS_WARN_STREAM("[Room] parent room id "
-            //       <<*(dsg_->graph->getLayerForNode(*parent))<<((child_node).attributes<ObjectNodeAttributes>()).color<<*(dsg_->graph->getLayerForNode(*parent))<< *parent <<"Room position is"<<dsg_->graph->getPosition(*parent).transpose()<<"i am"<<NodeSymbol(id_node_pair.first).getLabel());
-          
-          // ROS_WARN_STREAM(
-          //   "[Ob Type]  " << dsg_->graph->getLayerForNode(id_node_pair.first).value().layer
-          //   <<"  [Ob id]  " << id_node_pair.first
-          //   <<"  [Ob Position]"<< dsg_->graph->getPosition(id_node_pair.first).transpose()
-          //   <<"  [Room Type]  "<<(dsg_->graph->getLayerForNode(roomId).value().layer)
-          //   <<"  [Room Id]  "<< roomId
-          //   <<"  [Room Position]  "<<dsg_->graph->getPosition(roomId).transpose()
-          //   <<"  [Ob Label]  "<<NodeSymbol(id_node_pair.first).getLabel());
-        
+          if (!dsg_->graph->getNode(id_node_pair.first)) continue;
         }
-        // totalInfo += " END";
-        mesh_frontend_.publistObjInfo(totalInfo);
 
         for (const auto& node : objects_to_delete) {
           dsg_->graph->removeNode(node);
@@ -333,6 +269,51 @@ void DsgFrontend::runMeshFrontend() {
 
       object_clusters = segmenter_->detectObjects(
           mesh_frontend_.getActiveFullMeshVertices(), getLatestPose());
+    }
+    {
+      // after detect object, we need to send the object info to the agent
+      const auto& objects = dsg_->graph->getLayer(DsgLayers::OBJECTS);
+      std::string totalInfo = "";
+      int countForNode = 0;
+      for (const auto& id_node_pair : objects.nodes()) {
+        auto connections = dsg_->graph->getMeshConnectionIndices(id_node_pair.first);
+        if (!dsg_->graph->getNode(id_node_pair.first)) continue;
+        const auto& objNode = dsg_->graph->getNode(id_node_pair.first)
+                                  .value()
+                                  .get()
+                                  .attributes<SemanticNodeAttributes>();
+        // add Id
+        totalInfo += "";
+        totalInfo += std::to_string(countForNode++);
+        totalInfo += ",";
+        // add True ID
+        totalInfo += std::to_string(unsigned(id_node_pair.first));
+        totalInfo += ",";
+        // add color
+        totalInfo += std::to_string(unsigned(objNode.color(0)));
+        totalInfo += " ";
+        totalInfo += std::to_string(unsigned(objNode.color(1)));
+        totalInfo += " ";
+        totalInfo += std::to_string(unsigned(objNode.color(2)));
+        totalInfo += ",";
+        // add position
+        totalInfo += std::to_string(objNode.position(0));
+        totalInfo += " ";
+        totalInfo += std::to_string(objNode.position(1));
+        totalInfo += " ";
+        totalInfo += std::to_string(objNode.position(2));
+        totalInfo += ",";
+        // add time
+        totalInfo += std::to_string(unsigned(objNode.last_update_time_ns));
+        totalInfo += ",";
+        // add slabel
+        totalInfo += std::to_string(unsigned(objNode.semantic_label));
+        totalInfo += ",";
+        // add name
+        totalInfo += objNode.name;
+        totalInfo += ";";
+      }
+      mesh_frontend_.publistObjInfo(totalInfo);
     }
 
     {  // start dsg critical section
