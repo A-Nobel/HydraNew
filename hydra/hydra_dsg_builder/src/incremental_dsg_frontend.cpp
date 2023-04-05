@@ -277,50 +277,50 @@ void DsgFrontend::runMeshFrontend() {
       segmenter_->updateGraph(*dsg_->graph, object_clusters, last_places_timestamp_);
       addPlaceObjectEdges();
     }  // end dsg critical section
-    {
-      // after detect object, we need to send the object info to the agent
-      const auto& objects = dsg_->graph->getLayer(DsgLayers::OBJECTS);
-      std::string totalInfo = "";
-      int countForNode = 0;
-      for (const auto& id_node_pair : objects.nodes()) {
-        if (!dsg_->graph->getNode(id_node_pair.first)) continue;
-        const auto& objNode = dsg_->graph->getNode(id_node_pair.first)
-                                  .value()
-                                  .get()
-                                  .attributes<SemanticNodeAttributes>();
-        // add Id
-        totalInfo += "";
-        totalInfo += std::to_string(countForNode++);
-        totalInfo += ",";
-        // add True ID
-        totalInfo += std::to_string(unsigned(id_node_pair.first));
-        totalInfo += ",";
-        // add color
-        totalInfo += std::to_string(unsigned(objNode.color(0)));
-        totalInfo += " ";
-        totalInfo += std::to_string(unsigned(objNode.color(1)));
-        totalInfo += " ";
-        totalInfo += std::to_string(unsigned(objNode.color(2)));
-        totalInfo += ",";
-        // add position
-        totalInfo += std::to_string(objNode.position(0));
-        totalInfo += " ";
-        totalInfo += std::to_string(objNode.position(1));
-        totalInfo += " ";
-        totalInfo += std::to_string(objNode.position(2));
-        totalInfo += ",";
-        // add time
-        totalInfo += std::to_string(unsigned(objNode.last_update_time_ns));
-        totalInfo += ",";
-        // add slabel
-        totalInfo += std::to_string(unsigned(objNode.semantic_label));
-        totalInfo += ",";
-        // add name
-        totalInfo += objNode.name;
-        totalInfo += ";";
-      }
-      mesh_frontend_.publistObjInfo(totalInfo);
-    }
+    // {
+    //   // after detect object, we need to send the object info to the agent
+    //   const auto& objects = dsg_->graph->getLayer(DsgLayers::OBJECTS);
+    //   std::string totalInfo = "";
+    //   int countForNode = 0;
+    //   for (const auto& id_node_pair : objects.nodes()) {
+    //     if (!dsg_->graph->getNode(id_node_pair.first)) continue;
+    //     const auto& objNode = dsg_->graph->getNode(id_node_pair.first)
+    //                               .value()
+    //                               .get()
+    //                               .attributes<SemanticNodeAttributes>();
+    //     // add Id
+    //     totalInfo += "";
+    //     totalInfo += std::to_string(countForNode++);
+    //     totalInfo += ",";
+    //     // add True ID
+    //     totalInfo += std::to_string(unsigned(id_node_pair.first));
+    //     totalInfo += ",";
+    //     // add color
+    //     totalInfo += std::to_string(unsigned(objNode.color(0)));
+    //     totalInfo += " ";
+    //     totalInfo += std::to_string(unsigned(objNode.color(1)));
+    //     totalInfo += " ";
+    //     totalInfo += std::to_string(unsigned(objNode.color(2)));
+    //     totalInfo += ",";
+    //     // add position
+    //     totalInfo += std::to_string(objNode.position(0));
+    //     totalInfo += " ";
+    //     totalInfo += std::to_string(objNode.position(1));
+    //     totalInfo += " ";
+    //     totalInfo += std::to_string(objNode.position(2));
+    //     totalInfo += ",";
+    //     // add time
+    //     totalInfo += std::to_string(unsigned(objNode.last_update_time_ns));
+    //     totalInfo += ",";
+    //     // add slabel
+    //     totalInfo += std::to_string(unsigned(objNode.semantic_label));
+    //     totalInfo += ",";
+    //     // add name
+    //     totalInfo += objNode.name;
+    //     totalInfo += ";";
+    //   }
+    //   mesh_frontend_.publistObjInfo(totalInfo);
+    // }
     if (state.timestamp_ns != last_mesh_timestamp_) {
       dsg_->updated = true;
       continue;  // places dropped a message or is ahead of us, so we don't need

@@ -141,7 +141,7 @@ void MeshFrontend::publistObjInfo(const std::string& s){
   // msg.data = ss.str();
   msg.data = s;
 
-  ROS_INFO_STREAM(s);
+  // ROS_INFO_STREAM(s);
 
   object_info_pub_.publish(msg);
 }
