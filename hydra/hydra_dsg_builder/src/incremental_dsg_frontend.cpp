@@ -49,7 +49,7 @@ using pose_graph_tools::PoseGraph;
 using NodeRef = DynamicSceneGraph::NodeRef;
 
 using LabelClusters = MeshSegmenter::LabelClusters;
-
+ros::Publisher agent_info_pub_;
 DsgFrontend::DsgFrontend(const ros::NodeHandle& nh, const SharedDsgInfo::Ptr& dsg)
     : nh_(nh), dsg_(dsg) {
   config_ = load_config<DsgFrontendConfig>(nh_);
@@ -58,6 +58,7 @@ DsgFrontend::DsgFrontend(const ros::NodeHandle& nh, const SharedDsgInfo::Ptr& ds
   CHECK(mesh_frontend_.initialize(pgmo_nh, false));
   last_mesh_timestamp_ = 0;
   last_places_timestamp_ = 0;
+  agent_info_pub_ = pgmo_nh.advertise<std_msgs::String>("agent_info", 10);
 
   if (config_.should_log) {
     frontend_graph_logger_.setOutputPath(config_.log_path + "/frontend");
@@ -128,7 +129,12 @@ void DsgFrontend::handleLatestPoseGraph(const PoseGraph::ConstPtr& msg) {
     tf2::convert(node.pose.position, position);
     Eigen::Quaterniond rotation;
     tf2::convert(node.pose.orientation, rotation);
-
+    Eigen::Vector3d euler = rotation.toRotationMatrix().eulerAngles(2, 1, 0);
+    std::string totalInfo = "Agent,"+std::to_string(unsigned(node.key))+","+std::to_string(position[0])+" "+std::to_string(position[1])+" "
+    +std::to_string(position[2])+","+std::to_string(euler[0])+" "+std::to_string(euler[1])+" "+std::to_string(euler[2])+";";
+    std_msgs::String msgO;
+    msgO.data = totalInfo;
+    agent_info_pub_.publish(msgO);
     // TODO(nathan) implicit assumption that pgmo ids are sequential starting at 0
     // TODO(nathan) implicit assumption that gtsam symbol and dsg node symbol are same
     NodeSymbol pgmo_key(robot_prefix_, node.key);
