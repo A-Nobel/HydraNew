@@ -135,6 +135,7 @@ void DsgFrontend::handleLatestPoseGraph(const PoseGraph::ConstPtr& msg) {
     std_msgs::String msgO;
     msgO.data = totalInfo;
     agent_info_pub_.publish(msgO);
+    dsg_ ->graph->Ttest2.push_back(position);
     // TODO(nathan) implicit assumption that pgmo ids are sequential starting at 0
     // TODO(nathan) implicit assumption that gtsam symbol and dsg node symbol are same
     NodeSymbol pgmo_key(robot_prefix_, node.key);

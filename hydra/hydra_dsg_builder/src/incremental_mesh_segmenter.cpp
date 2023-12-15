@@ -395,36 +395,77 @@ void MeshSegmenter::updateGraph(DynamicSceneGraph& graph,
       }
     }
   }
-  const auto& objects = graph.getLayer(DsgLayers::OBJECTS);
-  for (const auto& id_node_pair : objects.nodes()) {
-    if (!graph.getNode(id_node_pair.first)) continue;
-    const auto& objNode = graph.getNode(id_node_pair.first)
-                              .value()
-                              .get()
-                              .attributes<SemanticNodeAttributes>();
-    for (const auto& id_node_pair2 : objects.nodes()) {
-      if (!graph.getNode(id_node_pair2.first)) continue;
-      const auto& objNode2 = graph.getNode(id_node_pair2.first)
-                                 .value()
-                                 .get()
-                                 .attributes<SemanticNodeAttributes>();
-      if (id_node_pair.first == id_node_pair2.first) continue;
-      if (objNode.bounding_box.isInside(objNode2.position) ||
-          objNode2.bounding_box.isInside(objNode.position)) {
-        if (objNode.bounding_box.volume() >= objNode2.bounding_box.volume()) {
-          graph.removeNode(id_node_pair2.first);
-          active_objects_[objNode2.semantic_label].erase(id_node_pair2.first);
-          active_object_timestamps_.erase(id_node_pair2.first);
-          objects_to_check_for_places_.erase(id_node_pair2.first);
-        } else {
-          graph.removeNode(id_node_pair.first);
-          active_objects_[objNode.semantic_label].erase(id_node_pair.first);
-          active_object_timestamps_.erase(id_node_pair.first);
-          objects_to_check_for_places_.erase(id_node_pair.first);
-        }
+  // const auto& objects = graph.getLayer(DsgLayers::OBJECTS);
+  // for (const auto& id_node_pair : objects.nodes()) {
+  //   if (!graph.getNode(id_node_pair.first)) continue;
+  //   const auto& objNode = graph.getNode(id_node_pair.first)
+  //                             .value()
+  //                             .get()
+  //                             .attributes<SemanticNodeAttributes>();
+  //   for (const auto& id_node_pair2 : objects.nodes()) {
+  //     if (!graph.getNode(id_node_pair2.first)) continue;
+  //     const auto& objNode2 = graph.getNode(id_node_pair2.first)
+  //                                .value()
+  //                                .get()
+  //                                .attributes<SemanticNodeAttributes>();
+  //     if (id_node_pair.first == id_node_pair2.first) continue;
+  //     if (objNode.bounding_box.isInside(objNode2.position) ||
+  //         objNode2.bounding_box.isInside(objNode.position)) {
+  //       if (objNode.bounding_box.volume() >= objNode2.bounding_box.volume()) {
+  //         graph.removeNode(id_node_pair2.first);
+  //         active_objects_[objNode2.semantic_label].erase(id_node_pair2.first);
+  //         active_object_timestamps_.erase(id_node_pair2.first);
+  //         objects_to_check_for_places_.erase(id_node_pair2.first);
+  //       } else {
+  //         graph.removeNode(id_node_pair.first);
+  //         active_objects_[objNode.semantic_label].erase(id_node_pair.first);
+  //         active_object_timestamps_.erase(id_node_pair.first);
+  //         objects_to_check_for_places_.erase(id_node_pair.first);
+  //       }
+  //     }
+  //   }
+  // }
+const auto& objects = graph.getLayer(DsgLayers::OBJECTS);
+std::vector<spark_dsg::NodeId> nodesToDelete; // 保存要删除的节点ID
+
+for (const auto& id_node_pair : objects.nodes()) {
+  if (!graph.getNode(id_node_pair.first)) continue;
+  const auto& objNode = graph.getNode(id_node_pair.first)
+                            .value()
+                            .get()
+                            .attributes<SemanticNodeAttributes>();
+  // 获取id_node_pair的下一个迭代器
+  auto next_iter = std::next(objects.nodes().find(id_node_pair.first));
+
+  for (auto id_node_pair2 = next_iter; id_node_pair2 != objects.nodes().end(); ++id_node_pair2) {
+    if (!graph.getNode(id_node_pair2->first)) continue;
+    const auto& objNode2 = graph.getNode(id_node_pair2->first)
+                               .value()
+                               .get()
+                               .attributes<SemanticNodeAttributes>();
+    if (objNode.bounding_box.isInside(objNode2.position) ||
+        objNode2.bounding_box.isInside(objNode.position)) {
+      if (objNode.bounding_box.volume() >= objNode2.bounding_box.volume()) {
+        nodesToDelete.push_back(id_node_pair2->first);
+        active_objects_[objNode2.semantic_label].erase(id_node_pair2->first);
+        active_object_timestamps_.erase(id_node_pair2->first);
+        objects_to_check_for_places_.erase(id_node_pair2->first);
+        break;
+      } else {
+        nodesToDelete.push_back(id_node_pair.first);
+        active_objects_[objNode.semantic_label].erase(id_node_pair.first);
+        active_object_timestamps_.erase(id_node_pair.first);
+        objects_to_check_for_places_.erase(id_node_pair.first);
+        break;
       }
     }
   }
+}
+
+for (const auto& id : nodesToDelete) {
+  graph.removeNode(id);
+}
+
 }
 
 

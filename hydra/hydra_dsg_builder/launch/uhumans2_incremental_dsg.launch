@@ -8,7 +8,7 @@
     <arg name="semantic_map_dir" default="$(find kimera_semantics_ros)/cfg"/>
     <arg name="semantic_map_file" default="tesse_multiscene_office1_segmentation_mapping.csv"/>
     <arg name="semantic_map_path" default="$(arg semantic_map_dir)/$(arg semantic_map_file)"/>
-
+    <arg name="nbv_path" default="/home/lf/nbv/NBV/Our_method/NBV_Our.txt"/>
     <arg name="use_gt_frame" default="true"/>
     <arg name="use_oriented_bounding_boxes" default="false"/>
     <arg name="sensor_frame" default="left_cam" if="$(arg use_gt_frame)"/>

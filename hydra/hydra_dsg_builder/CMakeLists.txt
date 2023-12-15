@@ -5,6 +5,16 @@ add_compile_options(-Wall -Wextra)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}-Wno-error=register")
+#zi ji wan
+SET(Python2_INCLUDE_DIRS "/usr/include/python2.7")
+SET(Python2_LIBRARIES "/usr/lib/python2.7/config-x86_64-linux-gnu/libpython2.7.so")
+SET( PYTHON_EXECUTABLE /usr/bin/python2.7)
+#find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+message("Python2: " ${Python2_INCLUDE_DIRS})
+message("Python2: " ${Python2_LIBRARIES})
+
+
 
 find_package(Boost REQUIRED COMPONENTS timer)
 find_package(spark_dsg REQUIRED)
@@ -19,6 +29,11 @@ find_package(
              tf2_eigen
              voxblox
              voxblox_ros
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 find_package(teaserpp REQUIRED)
@@ -42,6 +57,11 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
+
+include_directories( ${Python2_INCLUDE_DIRS}  ${catkin_INCLUDE_DIRS}  )
+# include directories( ${Python2_INCLUDE_DIRS} )
+# add_library(libhydra_dsg_builder src/incremental_dsg_frontend.cpp)
+# target_link_libraries(libhydra_dsg_builder ${Python2_LIBRARIES})
 
 add_library(
   ${PROJECT_NAME}
@@ -68,11 +88,18 @@ target_link_libraries(
   spark_dsg::spark_dsg
 )
 
-add_executable(${PROJECT_NAME}_incremental_node src/incremental_dsg_builder_node.cpp)
-target_link_libraries(${PROJECT_NAME}_incremental_node ${PROJECT_NAME})
+# add_executable(testnode src/node.cpp)
+# add_dependencies(testnode maintest_gencpp)
+# target_link_libraries(testnode ${catkin_LIBRARIES})
 
+
+add_executable(${PROJECT_NAME}_incremental_node src/incremental_dsg_builder_node.cpp)
+target_link_libraries(${PROJECT_NAME}_incremental_node ${catkin_LIBRARIES} ${PROJECT_NAME} ${Python2_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_incremental_node ${PROJECT_NAME}_generate_messages_cpp)
+#531 service
+add_dependencies(${PROJECT_NAME}_incremental_node ${PROJECT_NAME}_gencpp)
 add_executable(dsg_optimizer_node src/dsg_optimizer_node.cpp)
-target_link_libraries(dsg_optimizer_node ${PROJECT_NAME})
+target_link_libraries(dsg_optimizer_node ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(

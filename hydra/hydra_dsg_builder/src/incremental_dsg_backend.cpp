@@ -33,14 +33,36 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #include "hydra_dsg_builder/incremental_dsg_backend.h"
-#include "hydra_dsg_builder/minimum_spanning_tree.h"
 
+#include <glog/logging.h>
 #include <hydra_utils/timing_utilities.h>
 #include <pcl/search/kdtree.h>
 #include <voxblox/core/block_hash.h>
 
-#include <glog/logging.h>
+#include "hydra_dsg_builder/minimum_spanning_tree.h"
 
+// AddMyself
+// #include <ros/ros.h>
+// #include "hydra_dsg_builder/my_msg.h"
+// #include "hydra_dsg_builder/gain_msg.h"
+// #include "hydra_dsg_builder/GainCal.h"
+#include <iostream>
+
+#include "python2.7/Python.h"
+// #include <thread>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <istream>
+// #include <ctime>
+// //531
+#include <Eigen/Eigen>
+// #include "octomap_world/octomap_manager.h"
+// typedef Eigen::Vector3d StateVec;
+PyObject* pModule;
+PyObject* pFunc1;
+PyObject* pArgs;
+PyObject* pFunc2;
 namespace hydra {
 namespace incremental {
 
@@ -64,7 +86,7 @@ void DsgBackend::setSolverParams() {
   deformation_graph_->setParams(params);
   setVerboseFlag(false);
 }
-
+// 531
 DsgBackend::DsgBackend(const ros::NodeHandle nh,
                        const SharedDsgInfo::Ptr& dsg,
                        const SharedDsgInfo::Ptr& backend_dsg)
@@ -75,6 +97,37 @@ DsgBackend::DsgBackend(const ros::NodeHandle nh,
       shared_places_copy_(DsgLayers::PLACES),
       robot_id_(0) {
   config_ = load_config<DsgBackendConfig>(nh_);
+  // 531
+  //  manager_ = new volumetric_mapping::OctomapManager(nh_, nh_private);
+
+  try {
+    if (!Py_IsInitialized()) {
+      std::cout << "Before i --------- :" << std::endl;
+      // char strp[] = "Python";
+      // Py_SetProgramName(strp);
+      Py_Initialize();
+      PyRun_SimpleString("import sys");
+      PyRun_SimpleString("sys.path.append('/home/lf/tesse_interface_plus/notebooks')");
+      pModule = PyImport_ImportModule("exploration");
+      if (pModule == NULL) {
+        cout << "module not found" << endl;
+      }
+      pFunc1 = PyObject_GetAttrString(pModule, "go");
+      if (!pFunc1 || !PyCallable_Check(pFunc1)) {
+        cout << "not found function go" << endl;
+      }
+      pArgs = PyTuple_New(3);
+
+      pFunc2 = PyObject_GetAttrString(pModule, "turn");
+      if (!pFunc2 || !PyCallable_Check(pFunc2)) {
+        cout << "not found function turn" << endl;
+      }
+      std::cout << "f --------- :" << std::endl;
+    }
+  } catch (...) {
+    std::cout << "Can't initialized Python" << std::endl;
+    return;
+  }
 
   nh_.getParam("robot_id", robot_id_);
   if (!loadParameters(ros::NodeHandle(nh_, "pgmo"))) {
@@ -136,6 +189,11 @@ void DsgBackend::stop() {
 DsgBackend::~DsgBackend() {
   LOG(INFO) << " [DSG Backend] destructor called!";
   stop();
+  // //531
+  // if (manager_)
+  // {
+  //   delete manager_;
+  // }
 }
 
 void DsgBackend::start() {
@@ -201,7 +259,7 @@ void DsgBackend::startPgmo() {
   // Initialize save trajectory service
   save_traj_srv_ = nh_.advertiseService(
       "save_trajectory", &DsgBackend::saveTrajectoryCallback, this);
-
+  // ROS_INFO("here is call optimize");
   optimizer_thread_.reset(new std::thread(&DsgBackend::runPgmo, this));
 }
 
@@ -268,6 +326,7 @@ bool DsgBackend::readPgmoUpdates() {
 }
 
 void DsgBackend::runPgmo() {
+  // ROS_INFO("Starting DSG Backend");
   ros::WallRate r(10);
   while (ros::ok()) {
     status_.reset();
@@ -293,6 +352,7 @@ void DsgBackend::runPgmo() {
 
     bool have_dsg_updates = false;
     bool was_updated = false;
+    // ROS_INFO("Bad");
     {  // start pgmo mesh critical section
       std::unique_lock<std::mutex> pgmo_lock(pgmo_mutex_);
       have_dsg_updates = updatePrivateDsg();
@@ -302,11 +362,12 @@ void DsgBackend::runPgmo() {
         was_updated = true;
       } else if (config_.call_update_periodically && have_dsg_updates) {
         updateDsgMesh();
+        // ROS_INFO("Called");
         callUpdateFunctions();
         was_updated = true;
       }
     }  // end pgmo mesh critical section
-
+    // ROS_INFO("Good");
     if (have_graph_updates_ && config_.pgmo.should_log) {
       logStatus();
     }
@@ -326,9 +387,10 @@ void DsgBackend::runPgmo() {
 
     have_graph_updates_ = false;
   }
-
+  // ROS_INFO("Called");
   // TODO(nathan) figure this out instead of forcing an update before exiting
   updateDsgMesh();
+  // ROS_INFO("here is call");
   callUpdateFunctions();
   // TODO(Yun) Technically not strictly a g2o
   deformation_graph_->save(config_.pgmo.log_path + "/deformation_graph.dgrf");
@@ -516,12 +578,13 @@ void DsgBackend::updateDsgMesh(bool force_mesh_update) {
                                                  robot_vertex_prefix_,
                                                  num_interp_pts_,
                                                  interp_horizon_);
+  // ROS_INFO("here is call oooo");
   {
     // start private dsg critical section
     std::unique_lock<std::mutex> graph_lock(private_dsg_->mutex);
     private_dsg_->graph->setMeshDirectly(opt_mesh);
   }
-
+  // ROS_INFO("here is call head");
   std_msgs::Header header;
   header.stamp.fromNSec(last_timestamp_);
   publishMesh(opt_mesh, header, &opt_mesh_pub_);
@@ -530,6 +593,7 @@ void DsgBackend::updateDsgMesh(bool force_mesh_update) {
       viz_pose_mesh_edges_pub_.getNumSubscribers() > 0) {
     visualizeDeformationGraphEdges();
   }
+  // ROS_INFO("here is call defor");
 }
 
 void DsgBackend::optimize() {
@@ -579,8 +643,28 @@ void DsgBackend::updateMergedNodes(const std::map<NodeId, NodeId>& new_merges) {
   }
 }
 
+// void DsgBackend::turnright(){
+//   //Rotate one circle
+//   // Py_Initialize();
+//   PyRun_SimpleString("import sys");
+//   PyRun_SimpleString("sys.path.append('/home/winner/tesse_interface_plus-main/notebooks')");
+//   PyObject* pModule2 = PyImport_ImportModule("exploration");
+//   PyObject* pFunc2 = PyObject_GetAttrString(pModule2,"turn");
+//   PyObject_CallObject(pFunc2,NULL);
+//   private_dsg_->Went=true;
+// }
+
 void DsgBackend::callUpdateFunctions(const gtsam::Values& places_values,
                                      const gtsam::Values& pgmo_values) {
+  // //AddMyself
+  // ros::Publisher pubPlaces
+  // =nh_.advertise<hydra_dsg_builder::my_msg>("/PlacesCordinate",2);
+  // //531 service
+  // ros::NodeHandle ns;
+  // ros::ServiceClient client =
+  // ns.serviceClient<hydra_dsg_builder::GainCal>("AddInts");
+  ROS_INFO("Enter callUpdateFunctions");
+
   ScopedTimer spin_timer("backend/update_layers", last_timestamp_);
   {  // start private dsg critical section
     std::unique_lock<std::mutex> graph_lock(private_dsg_->mutex);
@@ -591,7 +675,223 @@ void DsgBackend::callUpdateFunctions(const gtsam::Values& places_values,
                                       config_.enable_node_merging);
       updateMergedNodes(merged_nodes);
     }
-  }  // end private dsg critical section
+  }
+  ROS_INFO("after updateMergedNodes");
+
+  // ROS_INFO_STREAM("after
+  // updateMergedNodes"<<private_dsg_->pgLen<<shared_dsg_->graph->Ttest2.back());
+  // ROS_INFO_STREAM("after
+  // updateMergedNodes"<<private_dsg_->pgLen<<(shared_dsg_->graph->Ttest2.back())(0));
+  // end private dsg critical section
+  // // AddMyself
+  // const auto& Placenode = private_dsg_->graph->getLayer(DsgLayers::PLACES);
+  // const auto& Roomnode = private_dsg_->graph->getLayer(DsgLayers::ROOMS);
+  // const auto& Objectnode =private_dsg_->graph->getLayer(DsgLayers::OBJECTS);
+
+  std::cout << "PGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG-----"
+               "-------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(0)
+            << "\nPGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG---"
+               "---------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(1)
+            << "\nPGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG---"
+               "---------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(2) << std::endl;
+  // ROS_INFO_STREAM("after updateMergedNodes"<<private_dsg_->pgLen);
+  //-----------------------------------------------------------------------Read------------------------------------------------
+  if (private_dsg_->pgLen > 0) {
+    std::cout << "PGLEN > 0" << std::endl;
+    for (auto itpg = shared_dsg_->graph->Ttest2.begin() + private_dsg_->pgLen;
+         itpg != shared_dsg_->graph->Ttest2.end();
+         itpg++) {
+      auto nowPG = *itpg;
+      auto lasPG = *(itpg - 1);
+      private_dsg_->LenthTemp +=
+          sqrt(pow(nowPG(0) - lasPG(0), 2) + pow(nowPG(1) - lasPG(1), 2));
+    }
+  }
+  std::cout << "Waylenth" << std::endl;
+  // ROS_INFO("pglen");
+  private_dsg_->wayLenth += private_dsg_->LenthTemp;
+  std::cout << "\n----------\n----------\n     " << private_dsg_->wayLenth
+            << "\n------------\n-----------\n"
+            << std::endl;
+  private_dsg_->pgLen = shared_dsg_->graph->Ttest2.size();
+  private_dsg_->LenthTemp = 0;
+  // std::cout << "Write txt" << std::endl;
+  // std::ofstream outfile("/home/lf/nbv/Explo_Lenth.txt", std::ios::app);
+  // if (outfile.good()) {
+  //   outfile << "Lenth: " << private_dsg_->wayLenth << std::endl;
+  //   // outfile<<"TIME DURA :"<<private_dsg_->timeDura<<std::endl;
+  //   outfile.close();
+  // }
+  // std::cout << "End write" << std::endl;
+  // ROS_INFO("write file");
+  if (private_dsg_->location_x.size() == 0) {
+    std::cout << "Read NBV" << std::endl;
+    std::ifstream fIn("/home/lf/nbv/NBV/Our_method/NBV_Our.txt");
+    std::string line;
+    // std::vector<double> location_x, location_y;
+
+    if (fIn) {
+      while (std::getline(fIn, line))  // 按行读取到line_info中
+      {
+        std::cout << "readline" << std::endl;
+        std::istringstream sin(line);  // create string input object
+        std::vector<std::string> Waypoints;
+        std::string info;
+
+        while (getline(sin, info, ' ')) {
+          // cout << "info:" << info << endl;
+          Waypoints.push_back(info);
+        }
+
+        std::string x_str = Waypoints[0];
+        std::string y_str = Waypoints[1];
+
+        // cout<< "x_str" << x_str << endl;
+        // cout<< "y_str" << y_str << endl;
+
+        float x, y;
+        std::stringstream sx, sy;  // transform string to double
+
+        sx << x_str;
+        sy << y_str;
+
+        sx >> x;
+        sy >> y;
+
+        private_dsg_->location_x.push_back(x);
+        private_dsg_->location_y.push_back(y);
+      }
+    }
+    std::cout << "Endread" << std::endl;
+  }
+
+  std::cout << "ALL NBV:   --------    " << private_dsg_->location_x.size()
+            << std::endl;
+  if (private_dsg_->CNM == 0) {
+    if (private_dsg_->Went && private_dsg_->circleDone) {
+      // add distance cost to combine imformation gain
+      private_dsg_->Destmpx = private_dsg_->location_x[private_dsg_->VideoCount];
+      private_dsg_->Destmpy = private_dsg_->location_y[private_dsg_->VideoCount];
+      std::cout << " The NBV cordinate --------- :"
+                << private_dsg_->location_x[private_dsg_->VideoCount] << std::endl;
+      std::cout << " The NBV cordinate --------- :"
+                << private_dsg_->location_y[private_dsg_->VideoCount] << std::endl;
+
+      private_dsg_->VideoCount++;
+
+      std::cout << " Py Ini --------- :" << std::endl;
+
+      if (!Py_IsInitialized()) std::cout << "init faild/n" << std::endl;
+      std::cout << " Py Inifni --------- :" << std::endl;
+
+      std::cout << "Before import --------- :" << std::endl;
+
+      std::cout << "Before set --------- :" << std::endl;
+
+      try {
+        if (Py_IsInitialized()) {
+          std::cout << "Before se --------- :" << std::endl;
+          PyTuple_SetItem(pArgs, 0, Py_BuildValue("f", private_dsg_->Destmpx));
+          PyTuple_SetItem(pArgs, 1, Py_BuildValue("f", 1.5));  // 1.5
+          PyTuple_SetItem(pArgs, 2, Py_BuildValue("f", private_dsg_->Destmpy));
+          std::cout << "set --------- :" << std::endl;
+          std::cout << "Before call Py Ini --------- :" << std::endl;
+          PyObject_CallObject(pFunc1, pArgs);
+        }
+      } catch (...) {
+        std::cout << "Can't move" << std::endl;
+      }
+
+      std::cout << "PYTHON  GO ______________________PYTHON "
+                   "GO_________________________________________________________________"
+                   "________________PYTHON GO   :  "
+                << private_dsg_->maxgID << std::endl;
+      private_dsg_->Went = false;
+      private_dsg_->PushDone = false;
+      private_dsg_->circleReady = true;
+      private_dsg_->TurnReady = false;
+      private_dsg_->stepReady = true;
+    }
+
+    // private_dsg_->GainID.clear();
+  }
+  std::cout << "PGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG-----"
+               "-------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(0)
+            << "\nPGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG---"
+               "---------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(1)
+            << "\nPGPGPGPGPGPGPGPGPGPGPGPG------------------PGPGPGPGPGPGPGPGPGPGPGPG---"
+               "---------------PGPGPGPGPGPGPGPGPGPGPGPG       :"
+            << (shared_dsg_->graph->Ttest2.back())(2) << std::endl;
+  std::cout
+      << "DDDDDDDDDDDDDDDDDDDDDDDDDD-------------------------------"
+         "DDDDDDDDDDDDDDDDDDDDDDDDDDD        DISTANCE TO DENST  :"
+      << sqrt(pow((shared_dsg_->graph->Ttest2.back())(0) - private_dsg_->Destmpx, 2) +
+              pow((shared_dsg_->graph->Ttest2.back())(1) - private_dsg_->Destmpy, 2))
+      << std::endl;
+  // Judge if it has arrived
+  if (sqrt(pow((shared_dsg_->graph->Ttest2.back())(0) - private_dsg_->Destmpx, 2) +
+           pow((shared_dsg_->graph->Ttest2.back())(1) - private_dsg_->Destmpy, 2)) <
+      1.5) {  // NEW CHANGE! 1.0
+    std::cout << "arrive" << std::endl;
+    private_dsg_->Went = true;
+    // expand has arrived nodes
+
+    if (private_dsg_->stepReady == true) {
+      private_dsg_->steps++;
+      private_dsg_->stepReady = false;
+    }
+
+    std::cout
+        << "$$$$$$$$$--------------$$$$$$$$$$$$$$----------------$$$$$$$$$$$$$$$$$-----"
+           "-------------------------------------------------------------------$$$$$$$$"
+           "$$:    "
+        << sqrt(pow((shared_dsg_->graph->Ttest2.back())(0) - private_dsg_->Destmpx, 2) +
+                pow((shared_dsg_->graph->Ttest2.back())(1) - private_dsg_->Destmpy, 2))
+        << std::endl;
+    // private_dsg_->stare ++;
+    if (private_dsg_->circleReady == true) {
+      private_dsg_->TurnReady = true;
+      private_dsg_->circleDone = false;
+    }
+  }
+  // Rotate one circle
+
+  if (private_dsg_->TurnReady == true && private_dsg_->circleDone == false) {
+    // private_dsg_->TurnReady = false;
+    std::cout << "rrrote" << std::endl;
+    private_dsg_->circleReady = false;
+
+    try {
+      if (Py_IsInitialized()) {
+        std::cout << "rote" << std::endl;
+        PyObject_CallObject(pFunc2, NULL);
+      }
+    } catch (...) {
+      std::cout << "Can't rote" << std::endl;
+      return;
+    }
+
+    std::cout << "before circle count" << std::endl;
+    private_dsg_->circleCount = private_dsg_->circleCount + 1;
+    private_dsg_->CNM = private_dsg_->CNM + 1;
+    std::cout << "CIRCLE NUM : " << private_dsg_->circleCount << std::endl;
+    if (private_dsg_->circleCount > 12) {
+      private_dsg_->circleCount = 0;
+      private_dsg_->circleDone = true;
+    }
+    if (private_dsg_->CNM == 13) {
+      private_dsg_->CNM = 0;
+    }
+    // private_dsg_->stare ++;
+    // private_dsg_->hasArchived = false;
+  }
+  std::cout << "before update roomnodes" << std::endl;
+  //----------------------------------------------------------------Read------------------------------------------------------
   updateRoomsNodes();
   updateBuildingNode();
 }

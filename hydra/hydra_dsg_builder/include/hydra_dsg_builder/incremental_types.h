@@ -41,6 +41,12 @@
 #include <map>
 #include <memory>
 #include <mutex>
+//AddMyself
+#include <iostream>
+#include <fstream>
+#include <istream>
+#include <cstdlib>
+#include <ctime>
 
 namespace hydra {
 
@@ -90,6 +96,149 @@ struct SharedDsgInfo {
 
   std::mutex lcd_mutex;
   std::queue<lcd::DsgRegistrationSolution> loop_closures;
+
+  //zi ji wan
+  int countedges = 0;
+  NodeId minID;
+  NodeId tminID;
+  NodeId maxID;
+  NodeId maxgID;
+  float Destmpx=0;
+  float Destmpy=0;
+  std::optional<NodeId> Parent;
+  int STI =0;
+  int SAI =0;
+  int GainID_size=0;
+  int GainID_size_last=0;
+  bool HasArchived = false;
+  bool StarPoi = true;
+  
+  // void SInit(SqStack &s)
+  // {
+  //   s.base=(int *)malloc(10*sizeof(int)); 
+    
+  //   if(!s.base) exit(-1);
+  //   s.top=s.base;
+  //   s.size=10;
+  // }
+  // int SPush(SqStack &s, int e)
+  // {
+  //   if(s.top-s.base>s.size)
+  //   {
+  //     s.base=(int *)realloc(s.base,(s.size+5)*sizeof(int)); 
+  //     if(!s.base)	exit(-2);
+  //     s.size=s.size+5;
+  //   }
+  //   *s.top=e;
+  //   s.top++;
+  //   return 1;
+  // }
+  // int SPop(SqStack &s,int &e)
+  // {
+  //   if(s.top==s.base)
+  //     return 0;
+  //   s.top--;//
+  //   e=*s.top;
+  //   return 1;
+  // }
+  // int SIsEmpty(SqStack s)
+  // {
+  //   if(s.top==s.base)
+  //     return 1;
+  //   else
+  //     return 0;
+  // }
+  // void SDestroy(SqStack &s)
+  // {
+  //   free(s.base);
+  // }
+  
+  std::map<std::map<NodeId,NodeId>,double> LINJ;
+  std::map<NodeId,Eigen::Vector3d> tempIDDis;
+  std::vector<std::pair<double,NodeId>> tempIDDis2;
+  std::vector<std::pair<double,NodeId>> DistanceID;
+  std::map<NodeId,Eigen::Vector3d> IDposition;
+  std::map<NodeId,Eigen::Vector3d> IDPOtemp;
+  std::vector<std::pair<double,NodeId>> DIDtemp;
+  std::map<NodeId,Eigen::Vector3d> cunchu;
+  std::map<NodeId,Eigen::Vector3d> allfrontier;
+  std::vector<std::pair<double,NodeId>> frontier_go;
+  std::vector<std::pair<double,double>> LowGainCor;
+  std::map<NodeId,Eigen::Vector3d> allPlacenodes;
+  std::vector<std::pair<double,NodeId>> GainID;
+  std::unordered_set<NodeId> hasarrived;
+  std::vector<std::pair<double,double>> HasArrivedCor;
+  std::unordered_set<NodeId> lowgain_node;
+  std::unordered_set<NodeId> Room;
+  std::vector< std::pair<double,double> > LatestPlaceDir;
+  bool hasArchived = true;
+  int hasArchivedCount = 0;
+  int circleCount = 0;
+  int CNM = 0;
+  bool circleDone = true;
+  int LPDSize = 0;
+  int LastLPDSize = 0;
+  double wayLenth=0;
+  double LenthTemp=0;
+  int pgLen = 0;
+  int counTime = 0;
+  int ChangeRoomBool1 = 0;
+  bool TimeBool1 = true;
+  bool TimeBool2 = true;
+  double timeDura = 0;
+  bool Cauculate = false;
+  clock_t start,end;
+  int RoomNum = 8;
+  //room exploration 
+  
+  bool togo_action=false;
+  bool action_safe=true;
+  bool ruminate = false;
+  bool rumi = false;
+  bool TurnReady = false;
+  bool circleReady = true;
+  bool stepReady = false;
+  int steps=0;
+  int stare = 0;
+  int roomding=0;
+  int waittime=0;
+  int AddComSize = 0;
+  std::unordered_set<NodeId> hasarrived_true;
+  std::map<NodeId,Eigen::Vector3d> allROOMfrontier;
+  std::map<NodeId,Eigen::Vector3d> allROOMnodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM1nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM2nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM3nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM4nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM5nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM6nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM7nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM8nodes;
+  std::map<NodeId,Eigen::Vector3d> ROOM9nodes;
+  std::vector<std::pair<double,NodeId>> ROOM_frontier_go;
+  std::vector<double> location_x, location_y;
+  //room exploration
+  //auto room exploration
+  std::unordered_set<int> hasarrived_room;
+  std::vector<double> dis_temp;
+  std::map<int,std::map<NodeId,Eigen::Vector3d>> ROOMnodes;
+  std::vector<std::pair<double,int>> ROOMselect;
+  bool initializing=true;
+  //auto room exploration
+
+  // std::vector<std::pair<double,NodeId>> Gaintemp;
+  std::vector<double> Min_dist;
+  std::vector<int> allnodepath;
+  std::vector<NodeId> pathIDstack;
+  bool go1=true;
+  bool GO=true;
+  bool Went=true;
+  bool PushDone=true;
+  bool PubBool=true;
+  bool went_go=false;
+  bool gainachived=false;
+  bool delemax=false;
+  int VideoCount = 0;
 };
 
 struct DsgBackendStatus {

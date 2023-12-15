@@ -321,19 +321,20 @@ void DynamicSceneGraphVisualizer::redrawImpl(const std_msgs::Header& header,
     if (layer.id == DsgLayers::OBJECTS) {
       std::string totalInfo = "";
       int countForNode = 0;
-      int countParent2 = 0;
+
       for (const auto& id_node_pair : layer.nodes()) {
         if (!scene_graph_->getNode(id_node_pair.first)) continue;
         const auto& objNode = scene_graph_->getNode(id_node_pair.first)
                                   .value()
                                   .get()
                                   .attributes<SemanticNodeAttributes>();
+        if(unsigned(objNode.color(0))!=111) continue;
         // add Id
         totalInfo += "";
         totalInfo += std::to_string(countForNode++);
         totalInfo += ",";
         // add True ID
-        totalInfo += std::to_string(unsigned(id_node_pair.first));
+        totalInfo += " ";
         totalInfo += ",";
         // add color
         totalInfo += std::to_string(unsigned(objNode.color(0)));
@@ -349,57 +350,58 @@ void DynamicSceneGraphVisualizer::redrawImpl(const std_msgs::Header& header,
         totalInfo += " ";
         totalInfo += std::to_string(objNode.position(2));
         totalInfo += ",";
-        // add time
-        totalInfo += std::to_string(unsigned(objNode.last_update_time_ns));
-        totalInfo += ",";
-        // add slabel
-        totalInfo += std::to_string(unsigned(objNode.semantic_label));
-        totalInfo += ",";
-        // add name
-        totalInfo += objNode.name;
-        totalInfo += ",";
+        // // add time
+        // totalInfo += " ";
+        // totalInfo += ",";
+        // // add slabel
+        // totalInfo += " ";
+        // totalInfo += ",";
+        // // add name
+        // totalInfo += " ";
+        // totalInfo += ",";
 
         // 打印objNode父节点的信息
-        if (!id_node_pair.second->hasParent()) {
-          // ROS_INFO("No Parent");
-          continue;
-        }
-        std::optional<NodeId> parent = id_node_pair.second->getParent();
+        // if (!id_node_pair.second->hasParent()) {
+        //   // ROS_INFO("No Parent");
+        //   continue;
+        // }
+        // std::optional<NodeId> parent = id_node_pair.second->getParent();
         // ROS_INFO("Parent ID: %d", unsigned(parent.value()));
         // 打印parent的父节点信息
 
-        if (!scene_graph_->getNode(parent.value()).value().get().getParent()) {
-          // ROS_INFO("No Parent2");
-          // add name
-          totalInfo += std::to_string(-1);
-          totalInfo += ",";
-          totalInfo += std::to_string(0);
-          totalInfo += " ";
-          totalInfo += std::to_string(0);
-          totalInfo += " ";
-          totalInfo += std::to_string(0);
-          totalInfo += ";";
-          continue;
-        }
-        std::optional<NodeId> parent2 =
-            scene_graph_->getNode(parent.value()).value().get().getParent();
-        // ROS_INFO("Room Parent2 ID: %d", unsigned(parent2.value()));
-        // add name
-        totalInfo += std::to_string(unsigned(parent2.value()));
-        totalInfo += ",";
-        const auto& roomNode = scene_graph_->getNode(parent2.value())
-                                   .value()
-                                   .get()
-                                   .attributes<SemanticNodeAttributes>();
-        // add room position
-        totalInfo += std::to_string(roomNode.position(0));
-        totalInfo += " ";
-        totalInfo += std::to_string(roomNode.position(1));
-        totalInfo += " ";
-        totalInfo += std::to_string(roomNode.position(2));
+        // if (!scene_graph_->getNode(parent.value()).value().get().getParent()) {
+        //   // ROS_INFO("No Parent2");
+        //   // add name
+        //   // totalInfo += std::to_string(-1);
+        //   // totalInfo += ",";
+        //   // totalInfo += std::to_string(0);
+        //   // totalInfo += " ";
+        //   // totalInfo += std::to_string(0);
+        //   // totalInfo += " ";
+        //   // totalInfo += std::to_string(0);
+        //   totalInfo += ";";
+        //   continue;
+        // }
+        // std::optional<NodeId> parent2 =
+        //     scene_graph_->getNode(parent.value()).value().get().getParent();
+        // // ROS_INFO("Room Parent2 ID: %d", unsigned(parent2.value()));
+        // // add name
+        // totalInfo += std::to_string(unsigned(parent2.value()));
+        // totalInfo += ",";
+        // const auto& roomNode = scene_graph_->getNode(parent2.value())
+        //                            .value()
+        //                            .get()
+        //                            .attributes<SemanticNodeAttributes>();
+        // // add room position
+        // totalInfo += std::to_string(roomNode.position(0));
+        // totalInfo += " ";
+        // totalInfo += std::to_string(roomNode.position(1));
+        // totalInfo += " ";
+        // totalInfo += std::to_string(roomNode.position(2));
         totalInfo += ";";
-        countParent2++;
+
       }
+      ROS_INFO("Number of Nodes: %d", countForNode);
       // 打印有parent2的node的数量
       //  ROS_INFO("countParent2: %d", countParent2);
       std_msgs::String msgO;

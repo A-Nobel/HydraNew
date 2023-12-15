@@ -95,6 +95,14 @@ class DynamicSceneGraph {
   using LayerVisitor = std::function<void(LayerKey, BaseLayer*)>;
 
   friend class SceneGraphLogger;
+  // //zi ji wan
+  // struct SqStack
+  // {
+  //   int *top;
+  //   int *base;
+  //   int size;
+  // };
+
 
   /**
    * @brief Construct the scene graph (with a default layer factory)
@@ -434,7 +442,7 @@ class DynamicSceneGraph {
                   bool clear_mesh_edges = true,
                   std::map<LayerId, bool>* attribute_update_map = nullptr,
                   bool update_dynamic_attributes = true,
-                  bool clear_removed = false);
+                  bool clear_removed = true);
 
   /**
    * @brief Update graph from another graph
@@ -446,7 +454,7 @@ class DynamicSceneGraph {
                          bool clear_mesh_edges = true,
                          std::map<LayerId, bool>* attribute_update_map = nullptr,
                          bool update_dynamic_attributes = true,
-                         bool clear_removed = false) {
+                         bool clear_removed = true) {
     return mergeGraph(other,
                       {},
                       allow_invalid_mesh,
@@ -494,6 +502,10 @@ class DynamicSceneGraph {
   // current static layer ids in the graph
   const LayerIds layer_ids;
 
+  //AddMyself
+  Eigen::Vector3d Ttest=Eigen::Vector3d(2,1,6);
+  std::vector<Eigen::Vector3d> Ttest2{Ttest};
+  std::string Ttest3 = "";
  protected:
   void visitLayers(const LayerVisitor& cb);
 
